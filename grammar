@@ -1,0 +1,11 @@
+S -> NP VP
+NP -> N
+N -> Adj N
+VP -> V NP
+V -> Be PrPt
+NP -> they
+N -> planes
+V -> are
+Be -> are
+Adj -> flying
+PrPt -> flying
