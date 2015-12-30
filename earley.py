@@ -35,6 +35,11 @@ class POSTags:
 			l.append(x+'->'+key)
 		return l
 
+	def isTerminal(self,word):
+		if word in self.rules.keys():
+			return True
+		return False
+
 tagset = POSTags()
 
 class Rule:
@@ -82,6 +87,7 @@ class EarleyParser:
 		self.chart = [[] for i in range(len(words)+1)]
 		self.LEN = 0
 		self.parser(words)
+		self.parsed = False
 
 	def parser(self,words):
 		begin = Rule('GAMMA -> S',0,0,0)
@@ -97,7 +103,7 @@ class EarleyParser:
 				rule = state
 				if self.incomplete(state) and rule.dot < len(rule.rhs) and tagset.checkTag(rule.rhs[rule.dot]) == False:
 					self.predictor(rule)
-				elif self.incomplete(state)and rule.dot < len(rule.rhs) and tagset.checkTag(rule.rhs[rule.dot]) == True:
+				elif self.incomplete(state) and rule.dot < len(rule.rhs) and tagset.checkTag(rule.rhs[rule.dot]) == True:
 					self.scanner(rule)
 				else:
 					self.completer(rule)
@@ -109,18 +115,24 @@ class EarleyParser:
 		print(ctr)'''
 		for rules in self.chart[LENW-1]:
 			if rules.lhs == 'S':
-				print("Parsed")
+				self.parsed = True
+		if(self.parsed == True):
+			print("Parsed")
+		else:
+			print("Not parsed")
 
 
 	def enqueue(self,entry,state):
-		if state in self.chart[entry] :
+		if entry >= self.LEN+1:
+			return None
+		if state in self.chart[entry]:
 			return None
 		else:
 			self.chart[entry].append(state)
 
 	def incomplete(self,rule):
 		LENRHS = len(rule.rhs)
-		if rule.dot != LENRHS+1:
+		if rule.dot != LENRHS:
 			return True
 		return False
 
@@ -130,13 +142,19 @@ class EarleyParser:
 			if rules.lhs == rule.rhs[rule.dot]:
 				#rule is of form A -> alpha (DOT)B beta [i,j]
 				#rules is of form B -> (DOT) gamma
-				self.enqueue(rule.j,Rule(rules.STRING,rule.j,rule.j,0))
+				if len(rules.rhs) == 1 and tagset.isTerminal(rules.rhs[0]) == True:
+					return None
+				else:
+					self.enqueue(rule.j,Rule(rules.STRING,rule.j,rule.j,0))
 
 	def scanner(self,rule):
+		#print("Scanner")
 		for r in grammar.g:
 			if r.lhs == rule.rhs[rule.dot]:
+				if len(r.rhs) == 1 and tagset.isTerminal(r.rhs[0]) == True:
+					return None
 				#r is of form B -> word[j]
-				self.enqueue(rule.j+1,Rule(r.STRING,rule.j,rule.j+1,rule.dot+1))
+				self.enqueue(rule.j+1,Rule(r.STRING,rule.j,rule.j+1,rule.dot))
 
 	def completer(self,rule):
 		#print("Completer")
